@@ -2,7 +2,7 @@ const { expect } = require('chai');
 
 const DateFreeze = require('.//date-freeze');
 
-const { Token, tokens, TokenGenerator } = require('../src/jwt');
+const { Token, tokens, TokenGenerator, B64URL } = require('../src/jwt');
 
 const secret_key = 'super-secret-key';
 const iss = 'issuer-one';
@@ -18,6 +18,16 @@ const token_generator = new TokenGenerator({
 
 const now = new Date(1628514905137);
 const example_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Mjg1MTQ5MDUsImV4cCI6MTYyODUxODUwNSwiaXNzIjoiaXNzdWVyLW9uZSIsImRhdGEiOiJwbGVwIn0.E90zF73xO8jfBQPyXB_Wa8NObQgkhoU_S_wagqWzFVU';
+
+describe('Base 64', () => {
+	it('Should encode and replace non-url safe characters', () => {
+		const unsafe_string = 'plep>>plepel???plop';
+		// normal b64 'cGxlcD4+cGxlcGVsPz8/cGxvcA=='
+		const expected_result = 'cGxlcD4-cGxlcGVsPz8_cGxvcA';
+		const result = B64URL.encode(unsafe_string);
+		expect(result).to.be.eql(expected_result);
+	});
+});
 
 describe('Tokens', () => {
 	afterEach(() => {
