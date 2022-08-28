@@ -74,8 +74,8 @@ class Token {
 		return hmac.digest('base64');
 	}
 
-	static verify(data, sk) {
-		const fragments = data.split('.');
+	static parse(token) {
+		const fragments = token.split('.');
 		if(fragments.length !== 3) {
 			throw new TokenError('Invalid number of fragments');
 		}
@@ -83,6 +83,17 @@ class Token {
 		const [ header, payload, signature ] = fragments;
 
 		const body = JSON.parse(B64URL.decode(payload));
+		return {
+			body,
+			jose: JSON.parse(B64URL.decode(header)),
+			header,
+			payload,
+			signature,
+		};
+	}
+
+	static verify(data, sk) {
+		const { header, payload, body, signature } = this.parse(data);
 
 		if(body.nbf && body.nbf > (Date.now() / 1000)) {
 			throw new TokenError('Token: invalid nbf');
