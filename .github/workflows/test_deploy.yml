@@ -28,6 +28,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@master
+      - run: npm version ${{ github.event.release.tag_name }} --git-tag-version=false
       - run: npm publish
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
