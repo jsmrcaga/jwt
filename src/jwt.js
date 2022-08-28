@@ -11,7 +11,7 @@ class B64URL {
 	static toURLB64(b64str) {
 		let b64 = b64str;
 		const replacements = [
-			[/=$/g, ''],
+			[/=+$/g, ''],
 			[/\+/g, '-'],
 			[/\//g, '_'],
 		];
@@ -155,4 +155,4 @@ class TokenGenerator {
 
 
 Token.TokenError = TokenError;
-module.exports = { Token, TokenGenerator };
+module.exports = { Token, TokenGenerator, B64URL };
