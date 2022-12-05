@@ -1,8 +1,13 @@
+const fs = require('fs');
+const path = require('path');
 const { expect } = require('chai');
 
 const DateFreeze = require('.//date-freeze');
 
 const { Token, tokens, TokenGenerator, B64URL } = require('../src/jwt');
+
+const PEM_RSA_SK = fs.readFileSync(path.join(__dirname, './keys/rsa/rsa-sk.pem'));
+const PEM_RSA_PK = fs.readFileSync(path.join(__dirname, './keys/rsa/rsa-pk.pem'));
 
 const secret_key = 'super-secret-key';
 const iss = 'issuer-one';
@@ -35,7 +40,7 @@ describe('Tokens', () => {
 	});
 
 	describe('Token Generator', () => {
-		it('Should generate a known token', () => {
+		it('Should generate a known token with HS256', () => {
 			DateFreeze.freeze(now);
 
 			const token = token_generator.generate({
@@ -57,6 +62,21 @@ describe('Tokens', () => {
 			*/
 			// Note that signatures are not the same
 			expect(token).to.be.eql(example_token);
+		});
+
+		it('Should generate & verify a known token with RS256', () => {
+			// Signature generated with RSA PEM keys on jwt.io
+			const rsa_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Mjg1MTQ5MDUsImV4cCI6MTYyODYwMTMwNSwiZGF0YSI6InBsZXAifQ.w_AsZMLZs6zMMRECEbemnk0XOljZ_AmyoNlaNndc4l95F-l5gng2lHygRKBYhFuiw4Cq-sUSb-ZdDlYEHABQFOOdy8p0ITK4LqC-mpD1ZUl5VyW3TnNadkFXsBjvPB_flVgGrUw-Ad9uA2bn7PvKS-v2IF8YMuJj_kE3oOSd4gD32I5volI2MtaSOdP8-BoaQdI2RtjTV6-DXubpFYKSCPWe11C5TynLMNCMIXwGr7-ZdxO6wCHtHPci6WB3ZF-qFL5MHbwafFZ21erCsnkOIzeE8gfYPH09LL__rVVS_59f7sAPfmFEe5gB3fva2yNpK1NywPhzHlhY2I7baX0P2A';
+			DateFreeze.freeze(now);
+
+			const token = Token.generate({
+				data: 'plep'
+			}, PEM_RSA_SK ,'RS256');
+
+
+			expect(token).to.be.eql(rsa_token);
+			expect(() => Token.verify(token, PEM_RSA_PK)).to.not.throw();
+			expect(Token.verify(token, PEM_RSA_PK).data).to.be.eql('plep');
 		});
 
 		it('Should verify a token', () => {

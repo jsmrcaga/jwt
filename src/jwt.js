@@ -1,77 +1,32 @@
-const Crypto = require('crypto');
+const SignatureAlgorithms = require('./signature-algorithms');
+const B64URL = require('./b64');
+const { TokenError } = require('./errors');
 
-class TokenError extends Error {}
-
-class B64URL {
-	static encode(data) {
-		const b64 = Buffer.from(data).toString('base64');
-		return this.toURLB64(b64);
-	}
-
-	static toURLB64(b64str) {
-		let b64 = b64str;
-		const replacements = [
-			[/=+$/g, ''],
-			[/\+/g, '-'],
-			[/\//g, '_'],
-		];
-
-		for(const [from, to] of replacements) {
-			b64 = b64.replace(from, to);
-		}
-
-		return b64;
-	}
-
-	static b64FromUrl(data) {
-		let b64 = data.replace(/\-/g, '+');
-		b64 = data.replace(/\_/g, '/');
-		const remainder = b64.length % 4;
-		if(!remainder) {
-			return b64;
-		}
-
-		switch(remainder) {
-			case 2:
-				return `${b64}==`;
-			case 3:
-				return `${b64}=`;
-			default:
-				throw new Error('Illegal B64URL string');
-		}
-	}
-
-	static decode(data) {
-		const b64 = this.b64FromUrl(data);
-		return Buffer.from(b64, 'base64').toString('utf8');
-	}
-}
+const SUPPORTED_ALG = Object.keys(SignatureAlgorithms.sign);
 
 class Token {
 	static stringify_utf8(json) {
 		return Buffer.from(JSON.stringify(json)).toString('utf8');
 	}
 
-	static create(payload, sk) {
+	static create(payload, sk, alg='HS256') {
 		const b64_payload = B64URL.encode(this.stringify_utf8(payload));
 
 		let header = {
-			alg: 'HS256',
+			alg,
 			typ: 'JWT'
 		};
 		header = B64URL.encode(this.stringify_utf8(header));
 
-		let token_no_sign = `${header}.${b64_payload}`;
-		let signature = this.sign(token_no_sign, sk);
+		const token_no_sign = `${header}.${b64_payload}`;
+		let signature = this.sign(token_no_sign, sk, alg);
 		signature = B64URL.toURLB64(signature);
 
 		return `${token_no_sign}.${signature}`;
 	}
 
-	static sign(str, secret_key) {
-		const hmac = Crypto.createHmac('sha256', secret_key);
-		hmac.update(str);
-		return hmac.digest('base64');
+	static sign(str, secret_key, alg='HS256') {
+		return SignatureAlgorithms.sign[alg](str, secret_key);
 	}
 
 	static parse(token) {
@@ -92,8 +47,8 @@ class Token {
 		};
 	}
 
-	static verify(data, sk) {
-		const { header, payload, body, signature } = this.parse(data);
+	static verify(data, keys) {
+		const { header, jose, payload, body, signature } = this.parse(data);
 
 		if(body.nbf && body.nbf > (Date.now() / 1000)) {
 			throw new TokenError('Token: invalid nbf');
@@ -103,15 +58,28 @@ class Token {
 			throw new TokenError('Token: expired token');
 		}
 
-		const computed_signature = B64URL.toURLB64(this.sign(`${header}.${payload}`, sk));
-		if(computed_signature !== signature) {
-			throw new TokenError('Token: invalid signature');
+		const { alg } = jose;
+		if(!(alg in SignatureAlgorithms.verify)) {
+			throw new Error(`Cannot verify token with algorithm ${alg}`);
+		}
+
+		const token_jose_and_payload = `${header}.${payload}`;
+
+		const verification = SignatureAlgorithms.verify[alg](token_jose_and_payload, keys, signature);
+
+		if(!verification) {
+			throw new Error('Token: invalid signature');
 		}
 
 		return body;
 	}
 
-	static generate(payload={}, { exp=null, max_age=3600*24, iss }={}, sk) {
+	// SK can be different things for every algo
+	static generate({ exp=null, max_age=3600*24, iss, ...payload }={}, sk, alg='HS256') {
+		if(!SUPPORTED_ALG.includes(alg)) {
+			throw new Error(`Unsupported algorithm ${alg}, only ${SUPPORTED_ALG.join(', ')} supported`);
+		}
+
 		const iat = Math.floor(Date.now() / 1000);
 		const data = {
 			iat,
@@ -121,12 +89,12 @@ class Token {
 			...payload
 		};
 
-		return this.create(data, sk);
+		return this.create(data, sk, alg);
 	}
 }
 
 class TokenGenerator {
-	constructor({ secret_key, iss, max_age }) {
+	constructor({ secret_key, iss, max_age, alg='HS256' }) {
 		if(!secret_key) {
 			throw new Error('Cannot instanciate TokenGenerator without secret key.')
 		}
@@ -134,14 +102,20 @@ class TokenGenerator {
 		this.secret_key = secret_key;
 		this.iss = iss;
 		this.max_age = max_age;
+		this.alg = alg;
 	}
 
-	generate(payload={}) {
-		return Token.generate(payload, {
+	generate(payload={}, alg=this.alg) {
+		if(!SUPPORTED_ALG.includes(alg)) {
+			throw new Error(`Unsupported algorithm ${alg}, only ${SUPPORTED_ALG.join(', ')} supported`);
+		}
+
+		return Token.generate({
 			max_age: this.max_age,
 			iss: this.iss,
-			exp: payload.exp || null
-		}, this.secret_key);
+			exp: payload.exp || null,
+			...payload
+		}, this.secret_key, alg);
 	}
 
 	verify(token) {
