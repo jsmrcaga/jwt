@@ -1,4 +1,4 @@
-const Crypto = require('crypto');
+const Crypto = require('node:crypto');
 const B64URL = require('./b64');
 const { TokenError } = require('./errors');
 // Each key should be a JOSE supported algorithm

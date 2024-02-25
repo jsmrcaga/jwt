@@ -22,7 +22,8 @@ const token_generator = new TokenGenerator({
 });
 
 const now = new Date(1628514905137);
-const example_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Mjg1MTQ5MDUsImV4cCI6MTYyODUxODUwNSwiaXNzIjoiaXNzdWVyLW9uZSIsImRhdGEiOiJwbGVwIn0.E90zF73xO8jfBQPyXB_Wa8NObQgkhoU_S_wagqWzFVU';
+// jti: test-token
+const example_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Mjg1MTQ5MDUsImV4cCI6MTYyODUxODUwNSwiaXNzIjoiaXNzdWVyLW9uZSIsImp0aSI6InRlc3QtdG9rZW4iLCJkYXRhIjoicGxlcCJ9.jxk_-8OdlVH4ge8kcoQUhloBaDL0U-2xDKcWhZ82L5M';
 
 describe('Base 64', () => {
 	it('Should encode and replace non-url safe characters', () => {
@@ -44,7 +45,8 @@ describe('Tokens', () => {
 			DateFreeze.freeze(now);
 
 			const token = token_generator.generate({
-				data: 'plep'
+				data: 'plep',
+				jti: 'test-token'
 			});
 
 			// Generated on jwt.io with
@@ -108,6 +110,16 @@ describe('Tokens', () => {
 			DateFreeze.freeze(now);
 			const t = example_token.slice(0, example_token.length - 1);
 			expect(() => token_generator.verify(t)).to.throw(Token.TokenError, /signature/);
+		});
+
+		it('Should raise because token issuer is not allowed', () => {
+			const token = token_generator.generate({
+				data: 'plep',
+			});
+
+			expect(() => token_generator.verify(token, {
+				allowed_issuers: ['plep']
+			})).to.throw(Token.TokenError, /iss not allowed/);
 		});
 	});
 })
