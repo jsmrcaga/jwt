@@ -1,3 +1,4 @@
+const Crypto = require('node:crypto');
 const SignatureAlgorithms = require('./signature-algorithms');
 const B64URL = require('./b64');
 const { TokenError } = require('./errors');
@@ -60,7 +61,11 @@ class Token {
 
 		const { alg } = jose;
 		if(!(alg in SignatureAlgorithms.verify)) {
-			throw new Error(`Cannot verify token with algorithm ${alg}`);
+			throw new Error(`Signature algorithm not supported`, {
+				details: {
+					alg
+				}
+			});
 		}
 
 		const token_jose_and_payload = `${header}.${payload}`;
@@ -105,21 +110,42 @@ class TokenGenerator {
 		this.alg = alg;
 	}
 
+	generate_payload(payload={}) {
+		return {
+			max_age: this.max_age,
+			iss: this.iss,
+			exp: payload.exp || null,
+			jti: Crypto.randomUUID(),
+			...payload
+		};
+	}
+
 	generate(payload={}, alg=this.alg) {
 		if(!SUPPORTED_ALG.includes(alg)) {
 			throw new Error(`Unsupported algorithm ${alg}, only ${SUPPORTED_ALG.join(', ')} supported`);
 		}
 
-		return Token.generate({
-			max_age: this.max_age,
-			iss: this.iss,
-			exp: payload.exp || null,
-			...payload
-		}, this.secret_key, alg);
+		const completed_payload = this.generate_payload(payload);
+		return Token.generate(completed_payload, this.secret_key, alg);
 	}
 
-	verify(token) {
-		return Token.verify(token, this.secret_key);
+	verify(token, {
+		allowed_issuers
+	} = {
+		allowed_issuers: [this.iss]
+	}) {
+		const body = Token.verify(token, this.secret_key);
+
+		if(!allowed_issuers.includes(body.iss)) {
+			throw new TokenError('Token: iss not allowed', {
+				details: {
+					iss: body.iss,
+					allowed_issuers
+				}
+			});
+		}
+
+		return body;
 	}
 
 	create(payload={}) {
