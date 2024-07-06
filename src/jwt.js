@@ -20,8 +20,7 @@ class Token {
 		header = B64URL.encode(this.stringify_utf8(header));
 
 		const token_no_sign = `${header}.${b64_payload}`;
-		let signature = this.sign(token_no_sign, sk, alg);
-		signature = B64URL.toURLB64(signature);
+		const signature = this.sign(token_no_sign, sk, alg);
 
 		return `${token_no_sign}.${signature}`;
 	}
