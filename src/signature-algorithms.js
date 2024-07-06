@@ -3,7 +3,7 @@ const B64URL = require('./b64');
 const { TokenError } = require('./errors');
 // Each key should be a JOSE supported algorithm
 
-module.exports = {
+const SignatureAlgorithms = {
 	sign: {
 		HS256: (token, secret_key) => {
 			const hmac = Crypto.createHmac('sha256', secret_key);
@@ -14,6 +14,10 @@ module.exports = {
 			const sign = Crypto.createSign('RSA-SHA256');
 			sign.update(token);
 			return sign.sign(secret_key).toString('base64');
+		},
+		ES256: (token, secret_key) => {
+			// For some reason it's the same, only the key-type changes
+			return SignatureAlgorithms.sign.RS256(token, secret_key);
 		}
 	},
 	verify: {
@@ -32,6 +36,11 @@ module.exports = {
 			const verifier = Crypto.createVerify('RSA-SHA256');
 			verifier.update(token_jose_and_payload);
 			return verifier.verify(public_key, signature, 'base64');
+		},
+		ES256: (token_jose_and_payload, public_key, signature) => {
+			return SignatureAlgorithms.verify.RS256(token_jose_and_payload, public_key, signature);
 		}
 	}
 };
+
+module.exports = SignatureAlgorithms;

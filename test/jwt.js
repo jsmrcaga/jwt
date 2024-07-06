@@ -9,6 +9,9 @@ const { Token, tokens, TokenGenerator, B64URL } = require('../src/jwt');
 const PEM_RSA_SK = fs.readFileSync(path.join(__dirname, './keys/rsa/rsa-sk.pem'));
 const PEM_RSA_PK = fs.readFileSync(path.join(__dirname, './keys/rsa/rsa-pk.pem'));
 
+const PEM_EC_SK = fs.readFileSync(path.join(__dirname, './keys/ec/ec-sk.pkcs8.pem'));
+const PEM_EC_PK = fs.readFileSync(path.join(__dirname, './keys/ec/ec-pk.pem'));
+
 const secret_key = 'super-secret-key';
 const iss = 'issuer-one';
 const iat = 1628514905;
@@ -79,6 +82,23 @@ describe('Tokens', () => {
 			expect(token).to.be.eql(rsa_token);
 			expect(() => Token.verify(token, PEM_RSA_PK)).to.not.throw();
 			expect(Token.verify(token, PEM_RSA_PK).data).to.be.eql('plep');
+		});
+
+		it('Should generate & verify a known token with ES256', () => {
+			// Signature generated with EC PEM/PKC8 keys on jwt.io
+			const ec_token = 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Mjg1MTQ5MDUsImV4cCI6MTYyODYwMTMwNSwiZGF0YSI6ImVjMjU2LXNpZ25lZCJ9.8kyotKuYwl6Rp3snNEdgpZYLfiOA-UOaRu7DaurZ4-H8P9XE2SrExjKvWt40-26G2lnlbm7eqCcNhFgAfoZYGQ';
+			DateFreeze.freeze(now);
+
+			const token = Token.generate({
+				data: 'ec256-signed'
+			}, PEM_EC_SK ,'ES256');
+
+
+			// Tokens cannot be equal because signatures are not consistent
+			// they can change on every execution (tested by re-generating on jwt.io)
+			expect(token).to.not.be.eql(ec_token);
+			expect(() => Token.verify(token, PEM_EC_PK)).to.not.throw();
+			expect(Token.verify(token, PEM_EC_PK).data).to.be.eql('ec256-signed');
 		});
 
 		it('Should verify a token', () => {
