@@ -10,7 +10,7 @@ class Token {
 		return Buffer.from(JSON.stringify(json)).toString('utf8');
 	}
 
-	static create({ header: header_extra, payload={} }, sk, alg='HS256') {
+	static build({ header: header_extra={}, payload={} }, sk, alg='HS256') {
 		const b64_payload = B64URL.encode(this.stringify_utf8(payload));
 
 		let header = {
@@ -20,12 +20,26 @@ class Token {
 			// to make sure the validation works later
 			...header_extra,
 		};
-		header = B64URL.encode(this.stringify_utf8(header));
+		const b64_header = B64URL.encode(this.stringify_utf8(header));
 
-		const token_no_sign = `${header}.${b64_payload}`;
-		const signature = this.sign(token_no_sign, sk, alg);
+		const token_wo_signature = `${b64_header}.${b64_payload}`;
+		const signature = this.sign(token_wo_signature, sk, alg);
 
-		return `${token_no_sign}.${signature}`;
+		const token = `${token_wo_signature}.${signature}`;
+		return {
+			header,
+			b64_header,
+			payload,
+			b64_payload,
+			signature,
+			token_wo_signature,
+			token
+		};
+	}
+
+	static create({ header={}, payload={} }, sk, alg='HS256') {
+		const { token } = this.build({ header, payload }, sk, alg);
+		return token;
 	}
 
 	static sign(str, secret_key, alg='HS256') {
@@ -170,6 +184,10 @@ class TokenGenerator {
 
 	create({ header={}, payload={} }={}, alg=this.alg) {
 		return Token.create({ header, payload }, this.secret_key, alg);
+	}
+
+	build({ header={}, payload={} }={}, alg=this.alg) {
+		return Token.build({ header, payload }, this.secret_key, alg);
 	}
 }
 
