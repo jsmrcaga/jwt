@@ -48,8 +48,10 @@ describe('Tokens', () => {
 			DateFreeze.freeze(now);
 
 			const token = token_generator.generate({
-				data: 'plep',
-				jti: 'test-token'
+				payload: {
+					data: 'plep',
+					jti: 'test-token'
+				}
 			});
 
 			// Generated on jwt.io with
@@ -69,15 +71,33 @@ describe('Tokens', () => {
 			expect(token).to.be.eql(example_token);
 		});
 
+		it('Should generate a known token with HS256 + custom header values', () => {
+			DateFreeze.freeze(now);
+
+			const token = token_generator.generate({
+				header: {
+					url: 'http://google.com',
+					nonce: 'random-string'
+				},
+				payload: {
+					data: 'plep',
+					jti: 'test-token'
+				}
+			});
+
+			expect(token).to.be.eql('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInVybCI6Imh0dHA6Ly9nb29nbGUuY29tIiwibm9uY2UiOiJyYW5kb20tc3RyaW5nIn0.eyJpYXQiOjE2Mjg1MTQ5MDUsImV4cCI6MTYyODUxODUwNSwiaXNzIjoiaXNzdWVyLW9uZSIsImp0aSI6InRlc3QtdG9rZW4iLCJkYXRhIjoicGxlcCJ9.IbdhfJsWFCkPnXHZMvHa_gHTwgfDsqiysODavc6GcRo');
+		});
+
 		it('Should generate & verify a known token with RS256', () => {
 			// Signature generated with RSA PEM keys on jwt.io
 			const rsa_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Mjg1MTQ5MDUsImV4cCI6MTYyODYwMTMwNSwiZGF0YSI6InBsZXAifQ.w_AsZMLZs6zMMRECEbemnk0XOljZ_AmyoNlaNndc4l95F-l5gng2lHygRKBYhFuiw4Cq-sUSb-ZdDlYEHABQFOOdy8p0ITK4LqC-mpD1ZUl5VyW3TnNadkFXsBjvPB_flVgGrUw-Ad9uA2bn7PvKS-v2IF8YMuJj_kE3oOSd4gD32I5volI2MtaSOdP8-BoaQdI2RtjTV6-DXubpFYKSCPWe11C5TynLMNCMIXwGr7-ZdxO6wCHtHPci6WB3ZF-qFL5MHbwafFZ21erCsnkOIzeE8gfYPH09LL__rVVS_59f7sAPfmFEe5gB3fva2yNpK1NywPhzHlhY2I7baX0P2A';
 			DateFreeze.freeze(now);
 
 			const token = Token.generate({
-				data: 'plep'
+				payload: {
+					data: 'plep'
+				}
 			}, PEM_RSA_SK ,'RS256');
-
 
 			expect(token).to.be.eql(rsa_token);
 			expect(() => Token.verify(token, PEM_RSA_PK)).to.not.throw();
@@ -90,9 +110,10 @@ describe('Tokens', () => {
 			DateFreeze.freeze(now);
 
 			const token = Token.generate({
-				data: 'ec256-signed'
+				payload: {
+					data: 'ec256-signed'
+				}
 			}, PEM_EC_SK ,'ES256');
-
 
 			// Tokens cannot be equal because signatures are not consistent
 			// they can change on every execution (tested by re-generating on jwt.io)
@@ -109,8 +130,10 @@ describe('Tokens', () => {
 		it('Should raise because token is expired', () => {
 			DateFreeze.freeze(now);
 			const token = token_generator.generate({
-				data: 'plep',
-				exp: iat - 3600
+				payload: {
+					data: 'plep',
+					exp: iat - 3600
+				}
 			});
 
 			expect(() => token_generator.verify(token)).to.throw(Token.TokenError, /expired/);
@@ -119,8 +142,10 @@ describe('Tokens', () => {
 		it('Should raise because token is not yet valid', () => {
 			DateFreeze.freeze(now);
 			const token = token_generator.generate({
-				data: 'plep',
-				nbf: iat + 360000
+				payload: {
+					data: 'plep',
+					nbf: iat + 360000
+				}
 			});
 
 			expect(() => token_generator.verify(token)).to.throw(Token.TokenError, /invalid nbf/);
@@ -134,7 +159,9 @@ describe('Tokens', () => {
 
 		it('Should raise because token issuer is not allowed', () => {
 			const token = token_generator.generate({
-				data: 'plep',
+				payload: {
+					data: 'plep',
+				}
 			});
 
 			expect(() => token_generator.verify(token, {
