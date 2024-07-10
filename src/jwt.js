@@ -7,6 +7,10 @@ const SUPPORTED_ALG = Object.keys(SignatureAlgorithms.sign);
 
 class Token {
 	static stringify_utf8(json) {
+		if(typeof json === 'string') {
+			return json;
+		}
+
 		return Buffer.from(JSON.stringify(json)).toString('utf8');
 	}
 
