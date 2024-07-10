@@ -71,6 +71,22 @@ describe('Tokens', () => {
 			expect(token).to.be.eql(example_token);
 		});
 
+		it('An empty payload needs to be respected', () => {
+			DateFreeze.freeze(now);
+
+			const { b64_payload: b64_empty_obj } = token_generator.build({
+				payload: {}
+			});
+
+			const { b64_payload: b64_empty_str } = token_generator.build({
+				payload: ''
+			});
+
+			// Note that signatures are not the same
+			expect(Buffer.from(b64_empty_obj, 'base64url').toString('utf8')).to.be.eql('{}');
+			expect(Buffer.from(b64_empty_str, 'base64url').toString('utf8')).to.be.eql('');
+		});
+
 		it('Should generate a known token with HS256 + custom header values', () => {
 			DateFreeze.freeze(now);
 
