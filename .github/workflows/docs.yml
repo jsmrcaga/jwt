@@ -1,0 +1,33 @@
+name: Docs
+
+on:
+  release:
+    types: 
+      - published
+
+# gh-pages style docs
+# build a new folder per version
+
+jobs:
+  build_docs_and_deploy:
+    name: Publish docs
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: |
+          ./.github/scripts/build-push-gh-pages.sh \
+            origin \
+            gh-pages \
+            docs-site \
+            jsdoc \
+            ${{ github.event.release.tag_name || 'pr-test'}}
