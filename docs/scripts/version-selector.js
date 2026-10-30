@@ -6,7 +6,7 @@
 	select.className = 'h-9 rounded-md bg-background px-2 text-sm text-muted-foreground';
 	select.style.border = '1px solid var(--clean-border)';
 
-	const current_version = document.querySelector('meta[name=docs_version]')?..getAttribute('value');
+	const current_version = document.querySelector('meta[name=docs_version]')?.getAttribute('value');
 	const base_path = document.querySelector('meta[name=base_path]')?.getAttribute('value') || '';
 	const base_url = new URL(window.location.href).origin;
 
