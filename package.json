@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha ./test --exit"
+    "test": "mocha ./test --exit",
+    "docs:build": "jsdoc -c ./jsdoc.config.js",
+    "docs:serve": "npx serve -p 3333 ./jsdoc"
   },
   "publishConfig": {
     "access": "public"
@@ -18,5 +20,9 @@
   },
   "engines": {
     "node": ">15.7.0"
+  },
+  "devDependencies": {
+    "clean-jsdoc-theme": "^5.2.1",
+    "jsdoc": "^4.0.5"
   }
 }
