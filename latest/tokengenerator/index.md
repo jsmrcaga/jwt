@@ -8,7 +8,7 @@ group: Utilities
 
 # TokenGenerator
 
-<SourceLink href="/source/jwt-js/#L224" label="jwt.js:224" />
+<SourceLink href="/source/jwt-js/#L228" label="jwt.js:228" />
 
 TokenGenerator Allows generating JWT tokens from pre-set defaults. Useful in smaller applications
 
@@ -32,7 +32,7 @@ TokenGenerator Allows generating JWT tokens from pre-set defaults. Useful in sma
 
 <MemberHeading id="generatepayload" depth="3" name="generate_payload" sig="generate_payload(payload: Object): Object" />
 
-<MemberMeta sourceHref="/source/jwt-js/#L250" sourceLabel="jwt.js:250" />
+<MemberMeta sourceHref="/source/jwt-js/#L254" sourceLabel="jwt.js:254" />
 
 Generates the payload to use in JWT. Adds { max_age, iss, exp, jti }
 
@@ -49,7 +49,7 @@ Generates the payload to use in JWT. Adds { max_age, iss, exp, jti }
 
 <MemberHeading id="generate" depth="3" name="generate" sig="generate(params: Object)" />
 
-<MemberMeta sourceHref="/source/jwt-js/#L266" sourceLabel="jwt.js:266" />
+<MemberMeta sourceHref="/source/jwt-js/#L269" sourceLabel="jwt.js:269" />
 
 Generates a JWT, see `Token#generate`
 
@@ -61,7 +61,7 @@ Generates a JWT, see `Token#generate`
 
 <MemberHeading id="verify" depth="3" name="verify" sig="verify(token: string, params: Object): Object" />
 
-<MemberMeta sourceHref="/source/jwt-js/#L286" sourceLabel="jwt.js:286" />
+<MemberMeta sourceHref="/source/jwt-js/#L292" sourceLabel="jwt.js:292" />
 
 Verifies a token against the secret key, alg and mabye allowed_issuers
 
@@ -81,12 +81,12 @@ Verifies a token against the secret key, alg and mabye allowed_issuers
 
 <MemberHeading id="create" depth="3" name="create" sig="create()" />
 
-<MemberMeta sourceHref="/source/jwt-js/#L308" sourceLabel="jwt.js:308" />
+<MemberMeta sourceHref="/source/jwt-js/#L314" sourceLabel="jwt.js:314" />
 
 Proxy function to `Token#create` passing this instance secret key and algorithm
 
 <MemberHeading id="build" depth="3" name="build" sig="build()" />
 
-<MemberMeta sourceHref="/source/jwt-js/#L315" sourceLabel="jwt.js:315" />
+<MemberMeta sourceHref="/source/jwt-js/#L321" sourceLabel="jwt.js:321" />
 
 Proxy function to `Token#build` passing this instance secret key and algorithm

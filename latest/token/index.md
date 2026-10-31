@@ -154,7 +154,7 @@ Verifies a jwt or throws. Checks for
 ): string"
 />
 
-<MemberMeta badges="static" sourceHref="/source/jwt-js/#L198" sourceLabel="jwt.js:198" />
+<MemberMeta badges="static" sourceHref="/source/jwt-js/#L199" sourceLabel="jwt.js:199" />
 
 Generates a JWT with default values. Calls `create` under the hood
 
@@ -162,6 +162,7 @@ Generates a JWT with default values. Calls `create` under the hood
 
 - `params` (Object)
   - `params.header` (Object) — The header values to use, defaults will be overriden, see `create`
+  - `params.max_age` (number) — Max age for the token in seconds, if provided -> exp = Date.now()+ max_age
   - `params.payload` (Object) — The JWT payload, default is { exp=null, max_age=24h}
 - `sk` (string) — The secret key to use for signature
 - `alg` ([SignatureAlgorithm](/signaturealgorithm)) — The algorithm to use for signature
