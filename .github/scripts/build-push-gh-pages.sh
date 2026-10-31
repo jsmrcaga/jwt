@@ -47,6 +47,10 @@ cp -r $ORIGIN_DIRECTORY "$DESTINATION_DIRECTORY/latest"
 VERSION=$VERSION JSDOC_BASE_PATH="/jwt/$VERSION" npm run docs:build
 cp -r $ORIGIN_DIRECTORY "$DESTINATION_DIRECTORY/$VERSION"
 
+# Copy versions into the latest/vX.X.X directories
+cp "$DESTINATION_DIRECTORY/versions.json" "$DESTINATION_DIRECTORY/$VERSION/versions.json"
+cp "$DESTINATION_DIRECTORY/versions.json" "$DESTINATION_DIRECTORY/latest/versions.json"
+
 # Push docs
 # move to gh-pages branch in worktree
 cd $DESTINATION_DIRECTORY
