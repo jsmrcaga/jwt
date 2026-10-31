@@ -190,12 +190,13 @@ class Token {
 	 * Generates a JWT with default values. Calls {@link create} under the hood
 	 * @param {Object} params
 	 * @param {Object} params.header - The header values to use, defaults will be overriden, see {@link create}
+	 * @param {number} params.max_age - Max age for the token in seconds, if provided -> exp = Date.now()+ max_age 
 	 * @param {Object} params.payload - The JWT payload, default is { exp=null, max_age=24h}
 	 * @param {string} sk - The secret key to use for signature
 	 * @param {SignatureAlgorithm} alg - The algorithm to use for signature
 	 * @returns {string} The JWT itself
  	 */
-	static generate({ header={}, payload: { exp=null, max_age=3600*24, iss, ...payload }}={}, sk, alg='HS256') {
+	static generate({ header={}, max_age=3600*24, payload: { exp=null, iss, ...payload }}={}, sk, alg='HS256') {
 		if(!SUPPORTED_ALG.includes(alg)) {
 			throw new Error(`Unsupported algorithm ${alg}, only ${SUPPORTED_ALG.join(', ')} supported`);
 		}
@@ -203,11 +204,14 @@ class Token {
 		const iat = Math.floor(Date.now() / 1000);
 		const data = {
 			iat,
-			exp: exp ?? iat + max_age,
 			iss,
 			// payload can overwrite any pre-computed properties
 			...payload
 		};
+
+		if(exp || max_age) {
+			data.exp = exp ?? iat + max_age;
+		}
 
 		return this.create({
 			header,
@@ -229,7 +233,7 @@ class TokenGenerator {
 	 * @param {string} init.max_age - The max age of the token, in seconds
 	 * @param {SignatureAlgorithm} init.alg - The algorithm to use
 	 */
-	constructor({ secret_key, iss, max_age, alg='HS256' }) {
+	constructor({ secret_key, iss, max_age=null, alg='HS256' }) {
 		if(!secret_key) {
 			throw new Error('Cannot instanciate TokenGenerator without secret key.')
 		}
@@ -249,7 +253,6 @@ class TokenGenerator {
 	 */
 	generate_payload(payload={}) {
 		return {
-			max_age: this.max_age,
 			iss: this.iss,
 			exp: payload.exp || null,
 			jti: Crypto.randomUUID(),
@@ -263,14 +266,17 @@ class TokenGenerator {
 	 * @param {Object} params.header - Extra header to pass to {@link Token#generate}
 	 * @param {Object} params.payload - The payload for the token, uses {@link generate_payload}
 	 */
-	generate({ header={}, payload={} }={}, alg=this.alg) {
+	generate({ header={}, max_age, payload={} }={}, alg=this.alg) {
 		if(!SUPPORTED_ALG.includes(alg)) {
 			throw new Error(`Unsupported algorithm ${alg}, only ${SUPPORTED_ALG.join(', ')} supported`);
 		}
 
 		const completed_payload = this.generate_payload(payload);
+		const max_age_computed = Boolean(max_age) || max_age === null ? max_age : this.max_age;
+
 		return Token.generate({
 			header,
+			max_age: max_age_computed,
 			payload: completed_payload,
 		}, this.secret_key, alg);
 	}

@@ -26,7 +26,7 @@ const token_generator = new TokenGenerator({
 
 const now = new Date(1628514905137);
 // jti: test-token
-const example_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Mjg1MTQ5MDUsImV4cCI6MTYyODUxODUwNSwiaXNzIjoiaXNzdWVyLW9uZSIsImp0aSI6InRlc3QtdG9rZW4iLCJkYXRhIjoicGxlcCJ9.jxk_-8OdlVH4ge8kcoQUhloBaDL0U-2xDKcWhZ82L5M';
+const example_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Mjg1MTQ5MDUsImlzcyI6Imlzc3Vlci1vbmUiLCJqdGkiOiJ0ZXN0LXRva2VuIiwiZGF0YSI6InBsZXAiLCJleHAiOjE2Mjg1MTg1MDV9.K3bfkieYYY2tumgFwI3QDmblv25qzviVkmKf71PURnU';
 
 describe('Base 64', () => {
 	it('Should encode and replace non-url safe characters', () => {
@@ -85,12 +85,12 @@ describe('Tokens', () => {
 				}
 			});
 
-			expect(token).to.be.eql('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInVybCI6Imh0dHA6Ly9nb29nbGUuY29tIiwibm9uY2UiOiJyYW5kb20tc3RyaW5nIn0.eyJpYXQiOjE2Mjg1MTQ5MDUsImV4cCI6MTYyODUxODUwNSwiaXNzIjoiaXNzdWVyLW9uZSIsImp0aSI6InRlc3QtdG9rZW4iLCJkYXRhIjoicGxlcCJ9.IbdhfJsWFCkPnXHZMvHa_gHTwgfDsqiysODavc6GcRo');
+			expect(token).to.be.eql('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInVybCI6Imh0dHA6Ly9nb29nbGUuY29tIiwibm9uY2UiOiJyYW5kb20tc3RyaW5nIn0.eyJpYXQiOjE2Mjg1MTQ5MDUsImlzcyI6Imlzc3Vlci1vbmUiLCJqdGkiOiJ0ZXN0LXRva2VuIiwiZGF0YSI6InBsZXAiLCJleHAiOjE2Mjg1MTg1MDV9.5PGf_gMkTKdCrj2VB_UiY8vs0jK8zzRlD1vD_J-R_q4');
 		});
 
 		it('Should generate & verify a known token with RS256', () => {
 			// Signature generated with RSA PEM keys on jwt.io
-			const rsa_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Mjg1MTQ5MDUsImV4cCI6MTYyODYwMTMwNSwiZGF0YSI6InBsZXAifQ.w_AsZMLZs6zMMRECEbemnk0XOljZ_AmyoNlaNndc4l95F-l5gng2lHygRKBYhFuiw4Cq-sUSb-ZdDlYEHABQFOOdy8p0ITK4LqC-mpD1ZUl5VyW3TnNadkFXsBjvPB_flVgGrUw-Ad9uA2bn7PvKS-v2IF8YMuJj_kE3oOSd4gD32I5volI2MtaSOdP8-BoaQdI2RtjTV6-DXubpFYKSCPWe11C5TynLMNCMIXwGr7-ZdxO6wCHtHPci6WB3ZF-qFL5MHbwafFZ21erCsnkOIzeE8gfYPH09LL__rVVS_59f7sAPfmFEe5gB3fva2yNpK1NywPhzHlhY2I7baX0P2A';
+			const rsa_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Mjg1MTQ5MDUsImRhdGEiOiJwbGVwIiwiZXhwIjoxNjI4NjAxMzA1fQ.pc9eNQ_abSBnk47by8tP1cdhV-obKPCwGu8ZrjakNhyIu-55XURwXbWeqpedsqk_Pd0oNXyjk3tmEH0QNuNuErXLNoSPEPLIOXMU3Ycrun_EksOBwhyrYWjNxDgeGIVJplm9RttOoGWo2GB1YifnutemG36iVagcvmtkrHeK-1YGIuopVQ-QszmX44qTVZvMWz_Y7y4JLvIJyZ_ki0T-h1nFrI_eBeV9ep3wtB4F57OiwMaJ0iInuvieltJVMwaWvzWDOfo-Gqb42FWO_mFi-RPluo75GIHwQV6a37XEzPYgsLvetZYiYvYJB9ZmB6-toy0LAA6ezrzXOxn9-Le3KA';
 			DateFreeze.freeze(now);
 
 			const token = Token.generate({
@@ -167,6 +167,33 @@ describe('Tokens', () => {
 			expect(() => token_generator.verify(token, {
 				allowed_issuers: ['plep']
 			})).to.throw(Token.TokenError, /iss not allowed/);
+		});
+
+		it('Should generate a token without `exp`', () => {
+			const token = Token.generate({
+				max_age: null,
+				payload: {
+					iss: 'plep'
+				}
+			}, secret_key);
+
+			const generator = new TokenGenerator({
+				secret_key,
+			});
+			const token2 = generator.generate();
+
+			for(const t of [token, token2]) {
+				const { body } = Token.parse(t);
+				expect(body).not.to.have.property('exp');
+			}
+
+			const generator_w_max_age = new TokenGenerator({
+				secret_key,
+				max_age: 3600
+			});
+			const token_w_max_age = generator_w_max_age.generate();
+			const { body } = Token.parse(token_w_max_age);
+			expect(body).to.have.property('exp');
 		});
 	});
 })
